@@ -32,6 +32,24 @@ def legislators_by_zipcode(zip)
   end
 end
 
+def get_peak_hours(hour_counts)
+  # Using the registration date and time we want to find out what the peak registration hours are.
+  
+puts "Peak registration hours:"
+hour_counts.sort_by { |hour, count| -count }.each do |hour, count|
+  puts "#{hour}:00 - #{count} registrations"
+end
+end
+
+def get_peak_days(day_counts)
+  # Using the registration date and time we want to find out what the peak registration days are.
+  
+puts "Peak registration days:"
+day_counts.sort_by { |day, count| -count }.each do |day, count|
+  puts "#{Date::DAYNAMES.at(day)}: #{count} registrations"
+end
+end
+
 def save_thank_you_letter(id,form_letter)
   Dir.mkdir('output') unless Dir.exist?('output')
 
@@ -52,10 +70,16 @@ contents = CSV.open(
 
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
+hour_counts = Hash.new(0)
+day_counts = Hash.new(0)
 
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
+  reg_date = row[:regdate]
+  time = Time.strptime(reg_date, "%m/%d/%y %H:%M")
+  hour_counts[time.hour] += 1
+  day_counts[time.wday] += 1
   zipcode = clean_zipcode(row[:zipcode])
   phone_number = clean_phone_number(row[:homephone])
   legislators = legislators_by_zipcode(zipcode)
@@ -64,3 +88,6 @@ contents.each do |row|
 
   save_thank_you_letter(id,form_letter)
 end
+
+get_peak_hours(hour_counts)
+get_peak_days(day_counts)
